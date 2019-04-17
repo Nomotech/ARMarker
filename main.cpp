@@ -6,6 +6,13 @@ using namespace std;
 
 int main() {
 
+	vector<cv::Mat> tramp;
+	for (int i = 0; i < 13; i++) {
+		std::stringstream sst;
+		sst << "./img/s" << i + 1 << ".jpg";
+		tramp.push_back(cv::imread(sst.str(), 0));
+	}
+
 	const int cols = 256;
 	const int rows = (int)(cols * 89.0/58.0);
 
@@ -38,35 +45,35 @@ int main() {
 	int Height = cap.get(cv::CAP_PROP_FRAME_HEIGHT);
 	fx = fy = (double)Width;
 
-	// esc ï¿½ï¿½ï¿½ï¿½Ü‚ï¿½
+	// esc ‚ğ‰Ÿ‚·‚Ü‚Å
 	while (cv::waitKey(5) != 0x1b) {
 		cv::Mat frame;
 		cap >> frame;
-		// ï¿½Lï¿½ï¿½ï¿½vï¿½`ï¿½ï¿½ï¿½Å‚ï¿½ï¿½Ä‚ï¿½ï¿½È‚ï¿½ï¿½ï¿½Îï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î‚ï¿½
+		// ƒLƒƒƒvƒ`ƒƒ‚Å‚«‚Ä‚¢‚È‚¯‚ê‚Îˆ—‚ğ”ò‚Î‚·
 		if (!frame.data) {
 			continue;
 		}
 
-		// 2ï¿½lï¿½ï¿½
+		// 2’l‰»
 		cv::Mat grayImage, binImage;
 		cv::cvtColor(frame, grayImage, cv::COLOR_BGR2GRAY);
 		cv::threshold(grayImage, binImage, 128.0, 255.0, cv::THRESH_OTSU);
-		cv::imshow("bin", binImage);
+		//cv::imshow("bin", binImage);
 
-		// ï¿½ÖŠsï¿½ï¿½ï¿½o
+		// —ÖŠs’Šo
 		std::vector< std::vector< cv::Point > > contours;
 		cv::findContours(binImage, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_NONE);
-		// ï¿½ï¿½ï¿½oï¿½ï¿½ï¿½ê‚½ï¿½ÖŠsï¿½ï¿½ï¿½Ì•`ï¿½ï¿½
+		// ŒŸo‚³‚ê‚½—ÖŠsü‚Ì•`‰æ
 		for (auto contour = contours.begin(); contour != contours.end(); contour++) {
 			cv::polylines(frame, *contour, true, cv::Scalar(0, 255, 0), 2);
 		}
 
-		// ï¿½ÖŠsï¿½ï¿½ï¿½lï¿½pï¿½`ï¿½ï¿½ï¿½Ì”ï¿½ï¿½ï¿½
+		// —ÖŠs‚ªlŠpŒ`‚©‚Ì”»’è
 		for (auto contour = contours.begin(); contour != contours.end(); contour++) {
-			// ï¿½ÖŠsï¿½ğ’¼ï¿½ï¿½ßï¿½
+			// —ÖŠs‚ğ’¼ü‹ß—
 			std::vector< cv::Point > approx;
 			cv::approxPolyDP(cv::Mat(*contour), approx, 50.0, true);
-			// ï¿½ßï¿½ï¿½ï¿½4ï¿½ï¿½ï¿½ï¿½ï¿½Â–ÊÏ‚ï¿½ï¿½ï¿½ï¿½Èï¿½È‚ï¿½lï¿½pï¿½`
+			// ‹ß—‚ª4ü‚©‚Â–ÊÏ‚ªˆê’èˆÈã‚È‚çlŠpŒ`
 			double area = cv::contourArea(approx);
 			if (approx.size() == 4 && area > 100.0) {
 				cv::Mat dst(rows, cols, CV_64FC4);
@@ -78,7 +85,6 @@ int main() {
 				if (da < db) {
 					approx.push_back(approx[0]);
 					approx.erase(approx.begin());
-					std::cout << "objectPoints" << std::endl;
 				}
 
 				dstPoints[0] = { 0,				0 };
@@ -88,13 +94,24 @@ int main() {
 				cv::Point2f aprPoints[4]{ approx[0], approx[1], approx[2], approx[3] };
 				cv::polylines(frame, approx, true, cv::Scalar(255, 0, 0), 2);
 
-				cv::putText(frame, "0", approx[0], cv::FONT_HERSHEY_PLAIN, 2.0, cv::Scalar(0, 128, 0));
-				cv::putText(frame, "1", approx[1], cv::FONT_HERSHEY_PLAIN, 2.0, cv::Scalar(0, 128, 0));
-				cv::putText(frame, "2", approx[2], cv::FONT_HERSHEY_PLAIN, 2.0, cv::Scalar(0, 128, 0));
-				cv::putText(frame, "3", approx[3], cv::FONT_HERSHEY_PLAIN, 2.0, cv::Scalar(0, 128, 0));
-
 				cv::Mat H = getPerspectiveTransform(aprPoints, dstPoints);
-				warpPerspective(frame, dst, H, dst.size());
+				warpPerspective(binImage, dst, H, dst.size());
+
+				cv::Mat img_xor;
+				float score = 255;
+				int num = 0;
+				for (int i = 0; i < 13; i++) {
+					bitwise_xor(dst, tramp[i], img_xor);
+//					cv::imshow("xor", img_xor);
+//					std::cout << cv::mean(img_xor)[0] << std::endl;
+					float mean = cv::mean(img_xor)[0];
+					if (mean < score) {
+						score = mean;
+						num = i + 1;
+					}
+				}
+				std::cout << num << std::endl;
+				cv::putText(frame, std::to_string(num), (approx[0] + approx[2]) / 2 + cv::Point{-5, 5}, cv::FONT_HERSHEY_PLAIN, 6.0, cv::Scalar(0, 0, 255), 3);
 
 				// solve PnP
 				cv::Mat rvec(3, 1, cv::DataType<double>::type);
