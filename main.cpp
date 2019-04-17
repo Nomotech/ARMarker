@@ -38,35 +38,35 @@ int main() {
 	int Height = cap.get(cv::CAP_PROP_FRAME_HEIGHT);
 	fx = fy = (double)Width;
 
-	// esc ‚ğ‰Ÿ‚·‚Ü‚Å
+	// esc ï¿½ï¿½ï¿½ï¿½Ü‚ï¿½
 	while (cv::waitKey(5) != 0x1b) {
 		cv::Mat frame;
 		cap >> frame;
-		// ƒLƒƒƒvƒ`ƒƒ‚Å‚«‚Ä‚¢‚È‚¯‚ê‚Îˆ—‚ğ”ò‚Î‚·
+		// ï¿½Lï¿½ï¿½ï¿½vï¿½`ï¿½ï¿½ï¿½Å‚ï¿½ï¿½Ä‚ï¿½ï¿½È‚ï¿½ï¿½ï¿½Îï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î‚ï¿½
 		if (!frame.data) {
 			continue;
 		}
 
-		// 2’l‰»
+		// 2ï¿½lï¿½ï¿½
 		cv::Mat grayImage, binImage;
 		cv::cvtColor(frame, grayImage, cv::COLOR_BGR2GRAY);
 		cv::threshold(grayImage, binImage, 128.0, 255.0, cv::THRESH_OTSU);
 		cv::imshow("bin", binImage);
 
-		// —ÖŠs’Šo
+		// ï¿½ÖŠsï¿½ï¿½ï¿½o
 		std::vector< std::vector< cv::Point > > contours;
 		cv::findContours(binImage, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_NONE);
-		// ŒŸo‚³‚ê‚½—ÖŠsü‚Ì•`‰æ
+		// ï¿½ï¿½ï¿½oï¿½ï¿½ï¿½ê‚½ï¿½ÖŠsï¿½ï¿½ï¿½Ì•`ï¿½ï¿½
 		for (auto contour = contours.begin(); contour != contours.end(); contour++) {
 			cv::polylines(frame, *contour, true, cv::Scalar(0, 255, 0), 2);
 		}
 
-		// —ÖŠs‚ªlŠpŒ`‚©‚Ì”»’è
+		// ï¿½ÖŠsï¿½ï¿½ï¿½lï¿½pï¿½`ï¿½ï¿½ï¿½Ì”ï¿½ï¿½ï¿½
 		for (auto contour = contours.begin(); contour != contours.end(); contour++) {
-			// —ÖŠs‚ğ’¼ü‹ß—
+			// ï¿½ÖŠsï¿½ğ’¼ï¿½ï¿½ßï¿½
 			std::vector< cv::Point > approx;
 			cv::approxPolyDP(cv::Mat(*contour), approx, 50.0, true);
-			// ‹ß—‚ª4ü‚©‚Â–ÊÏ‚ªˆê’èˆÈã‚È‚çlŠpŒ`
+			// ï¿½ßï¿½ï¿½ï¿½4ï¿½ï¿½ï¿½ï¿½ï¿½Â–ÊÏ‚ï¿½ï¿½ï¿½ï¿½Èï¿½È‚ï¿½lï¿½pï¿½`
 			double area = cv::contourArea(approx);
 			if (approx.size() == 4 && area > 100.0) {
 				cv::Mat dst(rows, cols, CV_64FC4);
@@ -159,7 +159,11 @@ int main() {
 				std::stringstream sst;
 				sst << "area : " << area;
 				cv::putText(frame, sst.str(), approx[0], cv::FONT_HERSHEY_PLAIN, 1.0, cv::Scalar(0, 128, 0));
-				cv::imshow("dst", dst);
+				//cv::imshow("dst", dst);
+				if (cv::waitKey(1) == 's') {
+					cv::imwrite("./img/test.jpg", dst);
+					std::cout << "save" << std::endl;
+				}
 			}
 		}
 		cv::imshow("frame", frame);
