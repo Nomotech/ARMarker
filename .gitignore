@@ -6,3 +6,7 @@ ARMarker\.vcxproj
 *.filters
 
 *.user
+
+packages\.config
+
+x64/
